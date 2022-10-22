@@ -882,3 +882,43 @@ print("图像的取值范围为:", b_x.min(), "~", b_x.max())
 ![](https://pic3.zhimg.com/80/v2-69383f73f912cf2f04e7b893d914523a_720w.webp)
 
 ## Warning:受版本影响,书中部分函数在新版本中被删除,顾等待二次回顾补充.
+
+```
+import torchtext
+from torchtext.legacy.data import Field, TabularDataset, Iterator, BucketIterator
+
+# 定义文本切分方法，使用空格拆分
+mytokenize = lambda x: x.split()
+
+# 定义将标签转化为Tensor相关操作
+TEXT = torchtext.legacy.data.Field(
+    sequential=True,  # 表明输入的文本是字符
+    tokenize=mytokenize,  # 使用自定义的分词方法
+    use_vocab=True,  # 创建一个词汇表
+    batch_first=True,  # batch优先的数据方式
+    fix_length=200  # 每个句子固定长度为200
+)
+
+# 定义将标签转化为Tensor的相关操作
+LABEL = torchtext.legacy.data.Field(
+    sequential=False,  # 表明输入的标签是数字
+    use_vocab=False,  # 不创建词汇表
+    pad_token=None,  # 不进行填充
+    unk_token=None  # 没有无法识别的字符
+)
+
+# 对所要读取的数据集进行每列处理
+text_data_fields = [
+    ("label", LABEL),  # 对标签的操作
+    ("text", TEXT)  # 对文本的操作
+]
+
+# 读取数据
+traindata, testdata = TabularDataset.splits(
+    path="data/textdata", format="csv",
+    train="train.csv", fields=text_data_fields,
+    test="test.cvs", skip_header=True
+)
+
+len(traindata), len(testdata)
+```
