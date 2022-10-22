@@ -1,4 +1,4 @@
-# `Torch.nn`构建网络#2
+# `dTorch.nn`构建网络#2
 
 ​		在`torch.nn`拥有Torch准备好的层,可以方便使用者调用构建网络.本次笔记记录:**卷积层**、**池化层**、**激活函数层**、**循环层**、**全连接层**
 
@@ -726,3 +726,159 @@ from torchvision.datasets import ImageFolder
 ```
 
 ​	
+
+### Sample :
+
+#### 从`torvision`中的datasets模块导入数据并预处理数据
+
+导入FashionMNIST数据集为例,该数据集包含一个60000张28 * 28的灰度图片作为训练集,以及10000张28 * 28的灰度图片作为测试集.数据共10类,分别是鞋子、T恤、连衣裙...饰品类图像
+
+Code:
+
+```python
+import torch.utils.data as Data
+import torchvision.transforms as transforms
+from torchvision.datasets import FashionMNIST
+
+# 使用FashionMNIST训练集,准备训练数据集
+train_data = FashionMNIST(
+    root="./data/FashionMNIST",  #训练集的路径
+    train=True, #只使用训练集
+    transform=transforms.ToTensor(),
+    download=True  # 如果没有训练集设置为True反之False
+)
+
+# 定义一个数据加载器
+train_loader = Data.DataLoader(
+    dataset=train_data,
+    batch_size=64,
+    shuffle=True,
+    num_workers=0
+)
+
+print("train_loader 的 batch 数量为:", len(train_loader))
+```
+
+输出:`train_loader 的 batch 数量为: 938`
+
+
+
+上述Function解释:
+
+​		通过`FashionMNIST`函数来导入数据,该函数中root参数用于指定需要导入的训练集所在的路径(如果指定路径下已有该训练集,需要把参数`download`设置为`False`,如果路径下没有训练集,则需要设置`download`为`True`).参数`train`的取值为True或False表示,表示导入的数据是训练集(60000张图片)或测试集(10000张图片).参数`transform`用于指定数据集的变换,`transform=transforms.ToTensor()`表示将数据中的像素值转换到0-1之前,并且将图像数据从形状为[H,W,C]转换形状为[C,H,W]
+
+​		在数据导入后需要利用数据加载器`DataLoader()`将整个数据集切分为多个**batch**,用于网络优化时利用梯度下降算法进行求解.在函数中`datasets`参数用于指定使用的训练集;`batch_size`参数指定每个batch使用的样本数量;`shuffle=True`表示从数据集中获取每个批量图片前打乱数据;`num_workers`参数用于指定导入数据使用的进程数量(和并行处理相似).经过处理后该训练集包含938个batch
+
+​		对训练数据集进行处理后,可以使用相同的方法对测试集进行处理,也可以使用如下对测试集进行处理.
+
+```python
+test_data = FashionMNIST(
+    root="./data/FashionMNIST",
+    train=False,
+    download=False
+)
+
+#  为数据添加一个通道维度,并且取值范围缩放到0~1之间
+test_data_x = test_data.data.type(torch.FloatTensor) / 255.0
+test_data_x = torch.unsqueeze(test_data_x, dim=1)
+test_data_y = test_data.targets  # 测试集标签
+print("test_data_x.shape is :", test_data_x.shape)
+print("test_data_y.shape is :", test_data_y.shape)
+```
+
+输出：`test_data_x.shape is : torch.Size([10000, 1, 28, 28])
+	  test_data_y.shape is : torch.Size([10000])`
+
+​		使用`FashionMNIST()`函数导入数据,使用`train=False`参数指定导入测试集,并将数据集的像素值除以255.0,使像素值转化到0~1之间,再使用函数`torch.unsqueeze()`为数据添加一个通道,即可得到测试数据集.在test_data中使用`test_data.data`获取图像数据,使用`test_data.target`获取每个图像所对应的标签.
+
+
+
+#### 从文件夹中导入数据并进行预处理:
+
+在`torchvision`的`datasets`模块中包含有`ImageFolder`函数,该函数可以读取如下格式的数据集:
+
+root/dog/xxx.png
+
+root/dog/xxx.png
+
+···
+
+root/cat/xxx.png
+
+
+
+在读取文件夹中的图像前,需要对训练数据集进行变换操作(预处理):
+
+```python
+train_data_transforms = transforms.Compose(
+    transforms.RandomResizedCrop(224),  # 随机长宽裁剪比为: 224 * 224
+    transforms.RandomHorizontalFlip(),
+    transforms.ToTensor(),  # 转化为Tensor并归一化至[0 ,1]
+    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]) #图像标准化处理
+)
+```
+
+​		上述代码,使用`transforms.Compose()`函数可以将多个变化操作组合在一起,其中train_data_transforms包含了将图像随机剪切为224 * 224,依概率p=0.5水平翻转、转化为Tensor并归一化至0~1、图像标准化处理等操作.
+
+
+
+现在使用`ImageFolder`函数读取图像,其中的`transforms`参数指定读取图像时对每张图像所做的变换,图像的取值范围为Tensor(-2.1179)~Tensor(2.6400).
+
+读取图像后,同样使用了`DataLoader()`函数创建了一个数据加载器.从输出结果可以发现,共读取了1张图像,每张图像是224 * 224的RGB图像,经过转化后,图像的像素值在-2.1008~2.4134之间.
+
+Code:
+
+```python
+import torch.utils.data as Data
+import torchvision.transforms as transforms
+from torchvision.datasets import FashionMNIST, ImageFolder
+
+train_data_transforms = transforms.Compose([
+    transforms.RandomResizedCrop(224),  # 随机长宽裁剪比为: 224 * 224
+    transforms.RandomHorizontalFlip(),
+    transforms.ToTensor(),  # 转化为Tensor并归一化至[0 ,1]
+    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])  # 图像标准化处理
+])
+
+train_data_dir = "data/Image/"  # 设置图像路径
+train_data = ImageFolder(train_data_dir, transform=train_data_transforms)
+
+train_data_loader = Data.DataLoader(
+    dataset=train_data,
+    batch_size=64,
+    shuffle=True,
+    num_workers=0
+)
+
+print("数据集的Label:", train_data.targets)
+
+# 获取一个batch数据
+for step, (b_x, b_y) in enumerate(train_data_loader):
+    if step > 0:
+        break
+
+print("b_x Shape is", b_x.shape)
+print("b_y Shape is", b_y.shape)
+print("图像的取值范围为:", b_x.min(), "~", b_x.max())
+```
+
+输出:`数据集的Label: [0]
+     b_x Shape is torch.Size([1, 3, 224, 224])
+     b_y Shape is torch.Size([1])
+     图像的取值范围为: tensor(-2.1008) ~ tensor(2.4134)`
+
+
+
+## 文本数据
+
+###		导言:
+
+对文本数据进行分类是深度学习任务中常见的应用,但是Pytorch建立的深度学习网络不能直接作用于文本数据,需要对文本数据进行相应的预处理.
+
+在指定文件夹中,包含两个文本数据的数据集train.csv和test.csv，在每个文件中均包含两列数据,分别表示文本对应的标签变量label和表示文本的内容变量test.
+
+​		
+
+![](https://pic3.zhimg.com/80/v2-69383f73f912cf2f04e7b893d914523a_720w.webp)
+
+## Warning:受版本影响,书中部分函数在新版本中被删除,顾等待二次回顾补充.
