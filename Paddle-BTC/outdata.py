@@ -16,11 +16,11 @@ df = pd.json_normalize(content['data']['quotes'])
 
 # 提取和重命名重要变量
 df['Date'] = pd.to_datetime(df['quote.USD.timestamp']).dt.tz_localize(None)  # 继承子级嵌套Data
-df['Low'] = df['quote.USD.low']  # 开盘USD价格
+df['Low'] = df['quote.USD.low']  # USD最低价格
 df['High'] = df['quote.USD.high']  # USD最高价格
-df['Open'] = df['quote.USD.open']  # USD最低价格
 df['Close'] = df['quote.USD.close']  # 闭盘USD价格
 df['Volume'] = df['quote.USD.volume']  # 保留参数
+df['Open'] = df['quote.USD.open']  # 开盘USD价格
 
 # 删除原始列和冗余列
 df = df.drop(
