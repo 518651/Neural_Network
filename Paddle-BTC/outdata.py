@@ -28,5 +28,6 @@ df = df.drop(
              'quote.USD.close', 'quote.USD.volume', 'quote.USD.market_cap', 'quote.USD.timestamp'])
 
 #  导出数据
-outdata = df
+outdata = pd.DataFrame(df)
+outdata.to_csv('BTC-COIN-DATA.csv', index=False)
 outdata.to_excel('BTC-COIN-DATA.xlsx', index=False)

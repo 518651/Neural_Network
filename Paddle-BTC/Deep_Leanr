@@ -1,6 +1,11 @@
+import paddle
+from paddle.nn import Linear
+import paddle.nn.functional as F
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import random
+
 
 #  读取数据
 
@@ -8,12 +13,12 @@ def load_data():
     datafile = pd.read_excel('BTC-COIN-DATA.xlsx', sheet_name=0, index_col=0)
     print(datafile)
 
-    feature_names = ['Date', 'Low', 'High', 'Open', 'Close', 'Volume']
+    feature_names = ['Date', 'Low', 'High', 'Close', 'Volume', 'Open']
     feature_num = len(feature_names)
 
-    
+    # 转换Tenson形状
+    # data = datafile.reshape([datafile.shape[0] // feature_num, feature_num])
+    # print(data)
+
 
 load_data()
-
-
-
